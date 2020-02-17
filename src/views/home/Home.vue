@@ -3,11 +3,28 @@
     <nav-bar class="home-nav">
       <div slot="center">购物街</div>
     </nav-bar>
-    <home-swiper :banners="banners" />
-    <recommend-view :recommends="recommends" />
-    <feature-view />
-    <tab-control class="tab-control" :titles="['流行','新款','精选']" @tabClick="tabClick" />
-    <goods-list :goods="showGoods"></goods-list>
+    <tab-control
+      ref="tabControl2"
+      class="tab-control"
+      :titles="['流行','新款','精选']"
+      @tabClick="tabClick"
+      v-show="isShowTabControl"
+    />
+    <scroll
+      class="content"
+      ref="scroll"
+      :probeType="3"
+      @scroll="scroll"
+      :pullUpLoad="true"
+      @pullingUp="pullingUp"
+    >
+      <home-swiper :banners="banners" @swiperImageLoad="swiperImageLoad" />
+      <recommend-view :recommends="recommends" />
+      <feature-view />
+      <tab-control ref="tabControl1" :titles="['流行','新款','精选']" @tabClick="tabClick" />
+      <goods-list :goods="showGoods"></goods-list>
+    </scroll>
+    <back-top @click.native="backClick" v-show="isShowBackUp" />
   </div>
 </template>
 
@@ -15,11 +32,14 @@
 import NavBar from "components/common/navbar/NavBar";
 import TabControl from "components/content/tabControl/TabControl";
 import GoodsList from "components/content/goods/GoodsList";
+import Scroll from "components/common/scroll/Scroll";
+import BackTop from "components/content/backTop/BackTop";
 import HomeSwiper from "./childComps/HomeSwiper";
 import RecommendView from "./childComps/RecommendView";
 import FeatureView from "./childComps/FeatureView";
 
 import { getHomeMultidata, getHomeGoods } from "network/home";
+import { debounce } from "common/utils";
 
 export default {
   name: "home",
@@ -29,23 +49,28 @@ export default {
     HomeSwiper,
     RecommendView,
     FeatureView,
-    GoodsList
+    GoodsList,
+    Scroll,
+    BackTop
   },
   data() {
     return {
       banners: [],
       recommends: [],
       goods: {
-        pop: { page: 1, list: [] },
-        new: { page: 1, list: [] },
-        sell: { page: 1, list: [] }
+        pop: { page: 0, list: [] },
+        new: { page: 0, list: [] },
+        sell: { page: 0, list: [] }
       },
-      currentType: "pop"
+      currentType: "pop",
+      isShowBackUp: false,
+      tabOffsetTop: 0,
+      isShowTabControl: false
     };
   },
-  computed:{
-    showGoods(){
-      return this.goods[this.currentType].list
+  computed: {
+    showGoods() {
+      return this.goods[this.currentType].list;
     }
   },
   created() {
@@ -55,6 +80,12 @@ export default {
     this.getHomeGoods("pop");
     this.getHomeGoods("new");
     this.getHomeGoods("sell");
+  },
+  mounted() {
+    const refresh = debounce(this.$refs.scroll.refresh, 50);
+    this.$bus.$on("itemImageLoad", () => {
+      refresh();
+    });
   },
   methods: {
     tabClick(index) {
@@ -68,6 +99,21 @@ export default {
         case 2:
           this.currentType = "sell";
       }
+      this.$refs.tabControl1.currentIndex = index;
+      this.$refs.tabControl2.currentIndex = index;
+    },
+    backClick() {
+      this.$refs.scroll.scrollTo(0, 0);
+    },
+    scroll(position) {
+      this.isShowBackUp = position.y < -1000;
+      this.isShowTabControl = -position.y > this.tabOffsetTop;
+    },
+    pullingUp() {
+      this.getHomeGoods(this.currentType);
+    },
+    swiperImageLoad() {
+      this.tabOffsetTop = this.$refs.tabControl1.$el.offsetTop;
     },
     /**
      * 网络请求相关
@@ -79,32 +125,37 @@ export default {
       });
     },
     getHomeGoods(type) {
-      getHomeGoods({ type: type, page: this.goods[type].page }).then(res => {
-        console.log("res:", res);
+      const page = this.goods[type].page + 1;
+      getHomeGoods({ type: type, page: page }).then(res => {
         this.goods[type].list.push(...res.data.list);
         this.goods[type].page += 1;
+        this.$refs.scroll.finishPullUp();
       });
     }
   }
 };
 </script>
 <style scoped>
-.home {
-  margin-top: 44px;
-}
 .home-nav {
   background-color: var(--color-tint);
   color: #fff;
 
-  position: fixed;
+  /* position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 9;
+  z-index: 9; */
+}
+.content {
+  position: absolute;
+  top: 44px;
+  bottom: 49px;
+  left: 0;
+  right: 0;
+  overflow: hidden;
 }
 .tab-control {
-  position: sticky;
-  top: 44px;
+  position: relative;
   z-index: 9;
 }
 </style>
