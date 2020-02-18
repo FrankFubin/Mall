@@ -31,7 +31,9 @@ export default {
       this.$bus.$emit("itemImageLoad");
     },
     goodsDetail(){
-      this.$router.push("/detail/"+this.goodsItem.iid);
+      if(this.goodsItem.iid){
+        this.$router.push("/detail/"+this.goodsItem.iid);
+      }
     }
   }
 };

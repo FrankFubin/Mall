@@ -6,6 +6,11 @@ export function getDetail(params) {
     params
   });
 }
+export function getRecommends() {
+  return request({
+    url: "/recommend"
+  });
+}
 
 export class Goods {
   constructor(itemInfo, columns, services) {

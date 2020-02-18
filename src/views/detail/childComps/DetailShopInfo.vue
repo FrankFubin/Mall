@@ -12,7 +12,7 @@
         </div>
         <div class="info-goods">
           <div class="goods-count">{{shop.goodsCount}}</div>
-          <div class="goodsText">全部宝贝</div>
+          <div class="goods-text">全部宝贝</div>
         </div>
       </div>
       <div class="shop-middle-item shop-middle-right">

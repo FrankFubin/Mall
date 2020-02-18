@@ -50,6 +50,7 @@ export default {
       this.scroll && this.scroll.finishPullUp("itemImageLoad");
     },
     refresh() {
+      // console.log("~~~");
       this.scroll && this.scroll.refresh();
     }
   }

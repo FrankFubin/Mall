@@ -8,7 +8,7 @@
     <div v-for="info in detailInfo.detailImage" :key="info.key">
       <div class="info-key">{{info.key}}</div>
       <div class="info-list">
-        <img v-for="(item,index) in info.list" :src="item" :key="index" alt />
+        <img v-for="(item,index) in info.list" :src="item" :key="index" alt @load="imgLoad" />
       </div>
     </div>
   </div>
@@ -20,6 +20,19 @@ export default {
     detailInfo: Object,
     default() {
       return {};
+    }
+  },
+  data() {
+    return {
+      count: 0
+    };
+  },
+  methods: {
+    imgLoad() {
+      // this.count++;
+      // if (this.count == this.detailInfo.detailImage[0].list.length) {
+      this.$emit("scrollRefresh");
+      // }
     }
   }
 };

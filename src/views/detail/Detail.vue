@@ -1,12 +1,14 @@
 <template>
   <div id="detail">
-    <detail-nav-bar class="detail-nav" />
-    <scroll class="detail-content">
+    <detail-nav-bar class="detail-nav" @titleClick="titleClick" />
+    <scroll class="detail-content" ref="scroll">
       <detail-swiper :topImages="topImages" />
       <detail-base-info :goods="goods" />
       <detail-shop-info :shop="shop" />
-      <detail-goods-info :detailInfo="detailInfo"/>
-      <detail-param-info :paramInfo="paramInfo"/>
+      <detail-goods-info :detailInfo="detailInfo" @scrollRefresh="scrollRefresh" />
+      <detail-param-info ref="param" :paramInfo="paramInfo" />
+      <detail-comment-info ref="comment" :commentInfo="commentInfo" />
+      <goods-list ref="recommend" :goods="recommends" />
     </scroll>
   </div>
 </template>
@@ -17,8 +19,12 @@ import DetailBaseInfo from "./childComps/DetailBaseInfo";
 import DetailShopInfo from "./childComps/DetailShopInfo";
 import DetailGoodsInfo from "./childComps/DetailGoodsInfo";
 import DetailParamInfo from "./childComps/DetailParamInfo";
+import DetailCommentInfo from "./childComps/DetailCommentInfo";
 import Scroll from "components/common/scroll/Scroll";
-import { getDetail, Goods, Shop } from "network/detail";
+import GoodsList from "components/content/goods/GoodsList";
+import { getDetail, getRecommends, Goods, Shop } from "network/detail";
+import { itemListenerMixin } from "common/mixin";
+import { debounce } from "common/utils";
 export default {
   name: "Detail",
   components: {
@@ -28,39 +34,75 @@ export default {
     DetailShopInfo,
     DetailGoodsInfo,
     DetailParamInfo,
-    Scroll
+    DetailCommentInfo,
+    Scroll,
+    GoodsList
   },
+  mixins: [itemListenerMixin],
   data() {
     return {
       topImages: [],
       goods: {},
       shop: {},
-      detailInfo:{},
-      paramInfo:{},
+      detailInfo: {},
+      paramInfo: {},
+      commentInfo: {},
+      recommends: [],
+      itemImgListener: null,
+      themeTopY: [],
+      getThemeTopY: null
     };
   },
   mounted() {
-    this.init();
+    this.getDetail();
+    this.getRecommends();
+    this.getThemeTopY = debounce(() => {
+      this.themeTopY = [];
+      this.themeTopY.push(0);
+      this.themeTopY.push(this.$refs.param.$el.offsetTop - 44);
+      this.themeTopY.push(this.$refs.comment.$el.offsetTop - 44);
+      this.themeTopY.push(this.$refs.recommend.$el.offsetTop - 44);
+    }, 50);
+  },
+  destroyed() {
+    this.$bus.$off("itemImageLoad", this.itemImgListener);
   },
   methods: {
-    init() {
+    getDetail() {
       getDetail({ iid: this.$route.params.id }).then(res => {
-        // 1.获取顶部的图片轮播数据
+        // console.log(res);
+        // 1.取出顶部的图片轮播数据
         this.topImages = res.result.itemInfo.topImages;
-        // 2.获取商品信息
+        // 2.取出商品信息
         this.goods = new Goods(
           res.result.itemInfo,
           res.result.columns,
           res.result.shopInfo.services
         );
-        // 3.创建店铺信息的对象
+        // 3.取出店铺信息的对象
         this.shop = new Shop(res.result.shopInfo);
-        // 4.保存商品的详情数据
+        // 4.取出商品的详情数据
         this.detailInfo = res.result.detailInfo;
-        // 5.
+        // 5.取出参数信息
         this.paramInfo = res.result.itemParams;
-
+        // 6.取出评论信息
+        if (res.result.rate.cRate > 0) {
+          this.commentInfo = res.result.rate;
+        }
       });
+    },
+    getRecommends() {
+      getRecommends().then(res => {
+        // console.log(res.data.list);
+        this.recommends = res.data.list;
+      });
+    },
+    scrollRefresh() {
+      this.newRefresh();
+      this.getThemeTopY();
+    },
+    titleClick(index) {
+      this.$refs.scroll.scrollTo(0, -this.themeTopY[index], 100);
     }
   }
 };
@@ -75,7 +117,7 @@ export default {
 .detail-nav {
   position: relative;
   z-index: 9;
-  background-color: #fff
+  background-color: #fff;
 }
 .detail-content {
   height: calc(100% - 44px);
