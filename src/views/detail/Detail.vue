@@ -1,7 +1,7 @@
 <template>
   <div id="detail">
-    <detail-nav-bar class="detail-nav" @titleClick="titleClick" />
-    <scroll class="detail-content" ref="scroll">
+    <detail-nav-bar ref="nav" class="detail-nav" @titleClick="titleClick" />
+    <scroll class="detail-content" ref="scroll" :probeType="3" @scroll="scroll">
       <detail-swiper :topImages="topImages" />
       <detail-base-info :goods="goods" />
       <detail-shop-info :shop="shop" />
@@ -50,7 +50,8 @@ export default {
       recommends: [],
       itemImgListener: null,
       themeTopY: [],
-      getThemeTopY: null
+      getThemeTopY: null,
+      currentIndex: 0,
     };
   },
   mounted() {
@@ -62,6 +63,7 @@ export default {
       this.themeTopY.push(this.$refs.param.$el.offsetTop - 44);
       this.themeTopY.push(this.$refs.comment.$el.offsetTop - 44);
       this.themeTopY.push(this.$refs.recommend.$el.offsetTop - 44);
+      this.themeTopY.push(Number.MAX_VALUE);
     }, 50);
   },
   destroyed() {
@@ -103,6 +105,20 @@ export default {
     },
     titleClick(index) {
       this.$refs.scroll.scrollTo(0, -this.themeTopY[index], 100);
+    },
+    scroll(position){
+      for(let i = 0;i<this.themeTopY.length-1;i++){
+        // if(i===this.themeTopY.length-1?(-position.y>=this.themeTopY[this.themeTopY.length-1]):(-position.y>=this.themeTopY[i]&&-position.y<this.themeTopY[i+1])){
+
+        //   console.log(i);
+        // }
+        
+        if((i!=this.currentIndex)&&(i<this.themeTopY.length-1&&-position.y>=this.themeTopY[i]&&-position.y<this.themeTopY[i+1])){
+          this.currentIndex = i;
+          this.$refs.nav.currentIndex = i;
+          console.log(i);
+        }
+      }
     }
   }
 };
