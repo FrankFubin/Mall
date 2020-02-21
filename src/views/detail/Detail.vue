@@ -10,6 +10,8 @@
       <detail-comment-info ref="comment" :commentInfo="commentInfo" />
       <goods-list ref="recommend" :goods="recommends" />
     </scroll>
+    <detail-bottom-bar @addToCart="addToCart"/>
+    <back-top class="back-top" @click.native="backClick" v-show="isShowBackUp" />
   </div>
 </template>
 <script>
@@ -20,10 +22,11 @@ import DetailShopInfo from "./childComps/DetailShopInfo";
 import DetailGoodsInfo from "./childComps/DetailGoodsInfo";
 import DetailParamInfo from "./childComps/DetailParamInfo";
 import DetailCommentInfo from "./childComps/DetailCommentInfo";
+import DetailBottomBar from "./childComps/DetailBottomBar";
 import Scroll from "components/common/scroll/Scroll";
 import GoodsList from "components/content/goods/GoodsList";
 import { getDetail, getRecommends, Goods, Shop } from "network/detail";
-import { itemListenerMixin } from "common/mixin";
+import { itemListenerMixin, backTopMixin } from "common/mixin";
 import { debounce } from "common/utils";
 export default {
   name: "Detail",
@@ -35,12 +38,14 @@ export default {
     DetailGoodsInfo,
     DetailParamInfo,
     DetailCommentInfo,
+    DetailBottomBar,
     Scroll,
     GoodsList
   },
-  mixins: [itemListenerMixin],
+  mixins: [itemListenerMixin, backTopMixin],
   data() {
     return {
+      iid:"",
       topImages: [],
       goods: {},
       shop: {},
@@ -51,7 +56,7 @@ export default {
       itemImgListener: null,
       themeTopY: [],
       getThemeTopY: null,
-      currentIndex: 0,
+      currentIndex: 0
     };
   },
   mounted() {
@@ -60,9 +65,9 @@ export default {
     this.getThemeTopY = debounce(() => {
       this.themeTopY = [];
       this.themeTopY.push(0);
-      this.themeTopY.push(this.$refs.param.$el.offsetTop - 44);
-      this.themeTopY.push(this.$refs.comment.$el.offsetTop - 44);
-      this.themeTopY.push(this.$refs.recommend.$el.offsetTop - 44);
+      this.themeTopY.push(this.$refs.param.$el.offsetTop);
+      this.themeTopY.push(this.$refs.comment.$el.offsetTop);
+      this.themeTopY.push(this.$refs.recommend.$el.offsetTop);
       this.themeTopY.push(Number.MAX_VALUE);
     }, 50);
   },
@@ -71,7 +76,8 @@ export default {
   },
   methods: {
     getDetail() {
-      getDetail({ iid: this.$route.params.id }).then(res => {
+      this.iid = this.$route.params.id;
+      getDetail({ iid:this.iid}).then(res => {
         // console.log(res);
         // 1.取出顶部的图片轮播数据
         this.topImages = res.result.itemInfo.topImages;
@@ -106,19 +112,34 @@ export default {
     titleClick(index) {
       this.$refs.scroll.scrollTo(0, -this.themeTopY[index], 100);
     },
-    scroll(position){
-      for(let i = 0;i<this.themeTopY.length-1;i++){
+    scroll(position) {
+      for (let i = 0; i < this.themeTopY.length - 1; i++) {
         // if(i===this.themeTopY.length-1?(-position.y>=this.themeTopY[this.themeTopY.length-1]):(-position.y>=this.themeTopY[i]&&-position.y<this.themeTopY[i+1])){
 
         //   console.log(i);
         // }
-        
-        if((i!=this.currentIndex)&&(i<this.themeTopY.length-1&&-position.y>=this.themeTopY[i]&&-position.y<this.themeTopY[i+1])){
+
+        if (
+          i != this.currentIndex &&
+          i < this.themeTopY.length - 1 &&
+            -position.y >= this.themeTopY[i] &&
+            -position.y < this.themeTopY[i + 1]
+        ) {
           this.currentIndex = i;
           this.$refs.nav.currentIndex = i;
           console.log(i);
         }
+        this.backTopListener(position);
       }
+    },
+    addToCart(){
+      const product = {};
+      product.image = this.topImages[0];
+      product.title = this.goods.title;
+      product.desc = this.goods.desc;
+      product.price = this.goods.realPrice;
+      product.iid = this.iid;
+      this.$store.commit("addCart",product)
     }
   }
 };
@@ -126,7 +147,7 @@ export default {
 <style scoped>
 #detail {
   position: relative;
-  z-index: 9;
+  z-index: 1;
   background-color: #fff;
   height: 100vh;
 }
@@ -136,6 +157,13 @@ export default {
   background-color: #fff;
 }
 .detail-content {
-  height: calc(100% - 44px);
+  position: absolute;
+  top: 44px;
+  bottom: 60px;
+}
+.back-top {
+  position: fixed;
+  right: 10px;
+  bottom: 65px;
 }
 </style>
