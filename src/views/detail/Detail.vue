@@ -10,7 +10,7 @@
       <detail-comment-info ref="comment" :commentInfo="commentInfo" />
       <goods-list ref="recommend" :goods="recommends" />
     </scroll>
-    <detail-bottom-bar @addToCart="addToCart"/>
+    <detail-bottom-bar @addToCart="addToCart" />
     <back-top class="back-top" @click.native="backClick" v-show="isShowBackUp" />
   </div>
 </template>
@@ -28,6 +28,7 @@ import GoodsList from "components/content/goods/GoodsList";
 import { getDetail, getRecommends, Goods, Shop } from "network/detail";
 import { itemListenerMixin, backTopMixin } from "common/mixin";
 import { debounce } from "common/utils";
+import { mapActions } from "vuex";
 export default {
   name: "Detail",
   components: {
@@ -45,7 +46,7 @@ export default {
   mixins: [itemListenerMixin, backTopMixin],
   data() {
     return {
-      iid:"",
+      iid: "",
       topImages: [],
       goods: {},
       shop: {},
@@ -75,9 +76,10 @@ export default {
     this.$bus.$off("itemImageLoad", this.itemImgListener);
   },
   methods: {
+    ...mapActions(["addCart"]),
     getDetail() {
       this.iid = this.$route.params.id;
-      getDetail({ iid:this.iid}).then(res => {
+      getDetail({ iid: this.iid }).then(res => {
         // console.log(res);
         // 1.取出顶部的图片轮播数据
         this.topImages = res.result.itemInfo.topImages;
@@ -122,8 +124,8 @@ export default {
         if (
           i != this.currentIndex &&
           i < this.themeTopY.length - 1 &&
-            -position.y >= this.themeTopY[i] &&
-            -position.y < this.themeTopY[i + 1]
+          -position.y >= this.themeTopY[i] &&
+          -position.y < this.themeTopY[i + 1]
         ) {
           this.currentIndex = i;
           this.$refs.nav.currentIndex = i;
@@ -132,14 +134,20 @@ export default {
         this.backTopListener(position);
       }
     },
-    addToCart(){
+    addToCart() {
       const product = {};
       product.image = this.topImages[0];
       product.title = this.goods.title;
       product.desc = this.goods.desc;
       product.price = this.goods.realPrice;
       product.iid = this.iid;
-      this.$store.commit("addCart",product)
+      // this.$store.dispatch("addCart",product).then(res=>{
+      //   console.log(res);
+      // });
+      this.addCart(product).then(res => {
+        console.log(res);
+        this.$toast.show(res);
+      });
     }
   }
 };

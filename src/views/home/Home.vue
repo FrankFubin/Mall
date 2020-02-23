@@ -72,14 +72,15 @@ export default {
     }
   },
   activated() {
-    this.$refs.scroll.scrollTo(0, this.saveY, 0);
     this.$refs.scroll.refresh();
+    this.$refs.scroll.scrollTo(0, this.saveY, 0);
   },
   deactivated() {
     this.saveY = this.$refs.scroll.scroll.y;
     this.$bus.$off("itemImageLoad", this.itemImgListener);
   },
   created() {
+    // console.log("home创建");
     // 1.请求多个数据
     this.getHomeMultidata();
     // 2.请求商品数据
