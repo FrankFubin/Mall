@@ -1,7 +1,6 @@
 <template>
-  <div>
-
-    <grid-view :cols="3" :lineSpace="15" :v-margin="20">
+  <div class="TabContent">
+    <grid-view :cols="3" :lineSpace="15" :v-margin="20" v-if="subcategories.list">
       <div class="item" v-for="(item, index) in subcategories.list" :key="index">
         <a :href="item.link">
           <img class="item-img" :src="item.image" alt="">
@@ -31,6 +30,9 @@
 </script>
 
 <style scoped>
+.TabContent{
+  width: 298px;
+}
   .panel img {
     width: 100%;
   }

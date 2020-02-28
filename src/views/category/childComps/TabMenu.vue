@@ -1,10 +1,8 @@
 <template>
   <Scroll id="tab-menu">
-    <div>
     <div class="menu-list-item" :class="{active:currentIndex==index}" v-for="(item,index) in category" :key="index"
          @click="tabClick(index)">
       {{item.title}}
-    </div>
     </div>
   </Scroll>
 </template>
